@@ -6,7 +6,11 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,8 +44,8 @@ public class Simulador extends JFrame {
 		});
 	}
 
-	public static void execute(int type) {
-		String className = "code.Simulador";
+	public static void execute(int protein, int type) {
+		String className = "code.SimulacioMP";
 		String javaHome = System.getProperty("java.home");
 		String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
 		String classpath = System.getProperty("java.class.path");
@@ -51,7 +55,7 @@ public class Simulador extends JFrame {
 		command.add("-cp");
 		command.add(classpath);
 		command.add(className);
-		command.add(String.valueOf(type));
+		command.add(String.valueOf(protein));
 
 		ProcessBuilder builder = new ProcessBuilder(command);
 		builder.redirectOutput(new File("resultat.txt"));
@@ -62,10 +66,28 @@ public class Simulador extends JFrame {
 			e.printStackTrace();
 		}
 	}
+	
+	private String buildFileHeader(int protein, int type, ) {
+		
+	}
+
+	public void initEventHandlers() {
+		btnSimulate.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				JSpinner[] spinnerArray = new JSpinner[] {spiPrimary, spiSecondary, spiTertiary, spiQuaternary};
+				for (int i = 1; i <= spinnerArray.length; i++) {
+					for (int j = 1; j <= (int) spinnerArray[i].getValue(); j++) {
+						execute(j, i);
+					}
+				}
+			}
+		});
+	}
 
 	public Simulador() {
 		setTitle("Alpha Fold Protein Simulator");
 		initComponents();
+		initEventHandlers();
 	}
 
 	public void initComponents() {
