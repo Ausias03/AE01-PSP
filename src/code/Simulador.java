@@ -6,22 +6,28 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-import javax.swing.JComboBox;
 import javax.swing.JSpinner;
 import javax.swing.JButton;
+
+import java.util.Date;
 
 public class Simulador extends JFrame {
 
 	private static final long serialVersionUID = 1L;
+	private static final String dateFormat = "yyyyMMdd_HHmmss_SSS";
+	private static final String filesRoute = "resources\\files";
 	private JPanel contentPane;
 	private JButton btnSimulate;
 	private JLabel lblProcessTime;
@@ -45,6 +51,8 @@ public class Simulador extends JFrame {
 	}
 
 	public static void execute(int protein, int type) {
+		long start = System.currentTimeMillis();
+		
 		String className = "code.SimulacioMP";
 		String javaHome = System.getProperty("java.home");
 		String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
@@ -55,10 +63,12 @@ public class Simulador extends JFrame {
 		command.add("-cp");
 		command.add(classpath);
 		command.add(className);
-		command.add(String.valueOf(protein));
+		command.add(String.valueOf(type));
+		command.add(dateFormat);
+		command.add(String.valueOf(start));
 
 		ProcessBuilder builder = new ProcessBuilder(command);
-		builder.redirectOutput(new File("resultat.txt"));
+		builder.redirectOutput(new File(filesRoute + "\\" + buildFileTitle(protein, type, "MP", start)));
 
 		try {
 			Process p = builder.start();
@@ -66,20 +76,58 @@ public class Simulador extends JFrame {
 			e.printStackTrace();
 		}
 	}
+
+	private static String buildFileTitle(int protein, int type, String sim, long startTime) {
+		SimpleDateFormat format = new SimpleDateFormat(dateFormat);
+		String date = format.format(new Date(startTime));
+		return "PROT_" + sim + "_" + type + "_n" + protein + "_" + date.substring(0, date.length() - 1) + ".sim";
+	}
 	
-	private String buildFileHeader(int protein, int type, ) {
-		
+	private static boolean teContingut(File[] files) {
+		boolean contingut = false;
+		try {
+			for (File arxiu : files) {
+				FileReader fr = new FileReader(arxiu, StandardCharsets.UTF_8);
+				BufferedReader br = new BufferedReader(fr);
+				String linea = br.readLine();
+				contingut = (linea != null);
+				br.close();
+				fr.close();
+				if (contingut == false)
+					break;
+			}
+		} catch (Exception e) {
+			System.out.println(e.getStackTrace());
+		}
+		return contingut;
+	}
+	
+	private void deleteFiles(File dir) {
+		for (File file : dir.listFiles()) {
+			file.delete();
+		}
 	}
 
 	public void initEventHandlers() {
 		btnSimulate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				JSpinner[] spinnerArray = new JSpinner[] {spiPrimary, spiSecondary, spiTertiary, spiQuaternary};
+				File fileDir = new File(filesRoute);
+				if (fileDir.exists()) {
+					deleteFiles(fileDir);
+				} else {
+					fileDir.mkdir();
+				}
+				
+				JSpinner[] spinnerArray = new JSpinner[] { spiPrimary, spiSecondary, spiTertiary, spiQuaternary };
+				long start = System.currentTimeMillis();
 				for (int i = 1; i <= spinnerArray.length; i++) {
-					for (int j = 1; j <= (int) spinnerArray[i].getValue(); j++) {
+					for (int j = 1; j <= (int) spinnerArray[i - 1].getValue(); j++) {
 						execute(j, i);
 					}
 				}
+				while (!teContingut(new File(filesRoute).listFiles())) {}
+				long end = System.currentTimeMillis();
+				lblProcessTime.setText(String.format("%.2f", ((end - start) / 1000.0d)) + " s");
 			}
 		});
 	}
