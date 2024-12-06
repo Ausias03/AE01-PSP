@@ -50,9 +50,7 @@ public class Simulador extends JFrame {
 		});
 	}
 
-	public static void execute(int protein, int type) {
-		long start = System.currentTimeMillis();
-		
+	public static void execute(int protein, int type, File file, long start) {
 		String className = "code.SimulacioMP";
 		String javaHome = System.getProperty("java.home");
 		String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
@@ -68,7 +66,7 @@ public class Simulador extends JFrame {
 		command.add(String.valueOf(start));
 
 		ProcessBuilder builder = new ProcessBuilder(command);
-		builder.redirectOutput(new File(filesRoute + "\\" + buildFileTitle(protein, type, "MP", start)));
+		builder.redirectOutput(file);
 
 		try {
 			Process p = builder.start();
@@ -82,7 +80,7 @@ public class Simulador extends JFrame {
 		String date = format.format(new Date(startTime));
 		return "PROT_" + sim + "_" + type + "_n" + protein + "_" + date.substring(0, date.length() - 1) + ".sim";
 	}
-	
+
 	private static boolean teContingut(File[] files) {
 		boolean contingut = false;
 		try {
@@ -101,7 +99,7 @@ public class Simulador extends JFrame {
 		}
 		return contingut;
 	}
-	
+
 	private void deleteFiles(File dir) {
 		for (File file : dir.listFiles()) {
 			file.delete();
@@ -117,17 +115,44 @@ public class Simulador extends JFrame {
 				} else {
 					fileDir.mkdir();
 				}
-				
+
 				JSpinner[] spinnerArray = new JSpinner[] { spiPrimary, spiSecondary, spiTertiary, spiQuaternary };
-				long start = System.currentTimeMillis();
+
+				// MP:
+				long procStart = System.currentTimeMillis();
 				for (int i = 1; i <= spinnerArray.length; i++) {
 					for (int j = 1; j <= (int) spinnerArray[i - 1].getValue(); j++) {
-						execute(j, i);
+						long start = System.currentTimeMillis();
+						execute(j, i, new File(filesRoute + "\\" + buildFileTitle(j, i, "MP", start)), start);
 					}
 				}
-				while (!teContingut(new File(filesRoute).listFiles())) {}
-				long end = System.currentTimeMillis();
-				lblProcessTime.setText(String.format("%.2f", ((end - start) / 1000.0d)) + " s");
+				while (!teContingut(new File(filesRoute).listFiles())) {
+				}
+				long procEnd = System.currentTimeMillis();
+
+				// MT:
+				ArrayList<Thread> threads = new ArrayList<>();
+				long thrStart = System.currentTimeMillis();
+				for (int i = 1; i <= spinnerArray.length; i++) {
+					for (int j = 1; j <= (int) spinnerArray[i - 1].getValue(); j++) {
+						long start = System.currentTimeMillis();
+						Thread thread = new Thread(new SimulacioMT(i,
+								new File(filesRoute + "\\" + buildFileTitle(j, i, "MT", start)), start, dateFormat));
+						thread.start();
+						threads.add(thread);
+					}
+				}
+				for (Thread thread : threads) {
+					try {
+						thread.join();
+					} catch (Exception ex) {
+						ex.getStackTrace();
+					}
+				}
+				long thrEnd = System.currentTimeMillis();
+
+				lblProcessTime.setText(String.format("%.2f", ((procEnd - procStart) / 1000.0d)) + " s");
+				lblThreadsTime.setText(String.format("%.2f", ((thrEnd - thrStart) / 1000.0d)) + " s");
 			}
 		});
 	}
