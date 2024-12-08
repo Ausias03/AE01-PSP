@@ -26,8 +26,17 @@ import java.util.Date;
 public class Simulador extends JFrame {
 
 	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * String Date format to be written on the files created by the program
+	 */
 	private static final String dateFormat = "yyyyMMdd_HHmmss_SSS";
+	
+	/**
+	 * String Route where the files will be created
+	 */
 	private static final String filesRoute = "resources\\files";
+	
 	private JPanel contentPane;
 	private JButton btnSimulate;
 	private JLabel lblProcessTime;
@@ -37,6 +46,11 @@ public class Simulador extends JFrame {
 	private JSpinner spiTertiary;
 	private JSpinner spiQuaternary;
 
+	/**
+	 * Main method of the app. Initializes the interface of the program
+	 * 
+	 * @param args String[] Parameters given as arguments to the program
+	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -50,6 +64,15 @@ public class Simulador extends JFrame {
 		});
 	}
 
+	/**
+	 * Method that creates and starts a process with the given information
+	 * 
+	 * @param protein int The protein that is being simulated
+	 * @param type    int The type of protein. Used in the logic to calculate the
+	 *                simulation
+	 * @param file    File The file where the information will be written
+	 * @param start   long The start of the execution of the process in milliseconds
+	 */
 	public static void execute(int protein, int type, File file, long start) {
 		String className = "code.SimulacioMP";
 		String javaHome = System.getProperty("java.home");
@@ -75,13 +98,33 @@ public class Simulador extends JFrame {
 		}
 	}
 
+	/**
+	 * Method that builds the title of the file of the simulated protein with the
+	 * given information
+	 * 
+	 * @param protein   int The protein that is going to be simulated
+	 * @param type      int The type of the protein
+	 * @param sim       String The method used to run the simulations, either
+	 *                  Multi-Process or Multi-Threading
+	 * @param startTime long The start of the execution of the process/thread in
+	 *                  milliseconds
+	 * @return
+	 */
 	private static String buildFileTitle(int protein, int type, String sim, long startTime) {
 		SimpleDateFormat format = new SimpleDateFormat(dateFormat);
 		String date = format.format(new Date(startTime));
 		return "PROT_" + sim + "_" + type + "_n" + protein + "_" + date.substring(0, date.length() - 1) + ".sim";
 	}
 
-	private static boolean teContingut(File[] files) {
+	/**
+	 * Method that checks if the files in the given File directory have content
+	 * written on them
+	 * 
+	 * @param files File[] The file directory that is going to be checked
+	 * @return boolean True only if every file has content // False if any file is
+	 *         empty
+	 */
+	private static boolean hasContent(File[] files) {
 		boolean contingut = false;
 		try {
 			for (File arxiu : files) {
@@ -100,12 +143,21 @@ public class Simulador extends JFrame {
 		return contingut;
 	}
 
+	/**
+	 * Method that deletes all files in a given directory
+	 * 
+	 * @param dir File The route of the directory
+	 */
 	private void deleteFiles(File dir) {
 		for (File file : dir.listFiles()) {
 			file.delete();
 		}
 	}
 
+	/**
+	 * Method that defines Event Handlers that activate when buttons on the GUI are
+	 * pressed
+	 */
 	public void initEventHandlers() {
 		btnSimulate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -126,7 +178,7 @@ public class Simulador extends JFrame {
 						execute(j, i, new File(filesRoute + "\\" + buildFileTitle(j, i, "MP", start)), start);
 					}
 				}
-				while (!teContingut(new File(filesRoute).listFiles())) {
+				while (!hasContent(new File(filesRoute).listFiles())) {
 				}
 				long procEnd = System.currentTimeMillis();
 

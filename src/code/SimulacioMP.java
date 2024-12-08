@@ -4,7 +4,13 @@ import java.util.Date;
 import java.text.SimpleDateFormat;
 
 public class SimulacioMP {
-	public static double simulation(int type) {
+	/**
+	 * Method that runs the simulation of the protein
+	 * 
+	 * @param type int The type of protein to run the simulation on
+	 * @return double The result of the simulation
+	 */
+	private static double simulation(int type) {
 		double calc = 0.0;
 		double simulationTime = Math.pow(5, type);
 		double startTime = System.currentTimeMillis();
@@ -15,6 +21,11 @@ public class SimulacioMP {
 		return calc;
 	}
 
+	/**
+	 * Main method that calls the simulation and gathers necessary data
+	 * 
+	 * @param args String[] Parameters given as arguments to the program
+	 */
 	public static void main(String[] args) {
 		int type = Integer.parseInt(args[0]);
 		SimpleDateFormat dateFormat = new SimpleDateFormat(args[1]);
